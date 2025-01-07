@@ -1,5 +1,28 @@
 library (ggplot2)
-......
+library(readxl)
+library(mdatools)
+library(Metrics)
+
+## example of code
+x <- data.frame(read_excel("~/R/Chemometrics/China MW December 22.xlsx", sheet = 'DF with new MS',
+                           range ='AA1:AO22'))
+rownames(x) <- seq(0,20, 1)
+y <- data.frame(read_excel("~/R/Chemometrics/China MW December 22.xlsx", sheet = 'DF with new MS',
+                           range ='EL1:EL22'))
+rownames(y) <- seq(0,20, 1)
+
+###############################################################################
+########## MS, PLS
+plot(m)
+show(summary(m))
+plotPredictions(m, show.labels = T)
+abline(a =0,b=1)
+plotRegcoeffs(m, show.labels = T)
+
+res_cal <- m[["res"]][["cal"]][["y.pred"]][,3,1]
+res_cv <- m[["res"]][["cv"]][["y.pred"]][,3,1]
+res_ref <-  m[["res"]][["cv"]][["y.ref"]]
+res <-data.frame(cbind(res_cv, res_cal, res_ref))
 
 ggplot(res) +
   #geom_smooth((aes(x = c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4) , y =c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4))), method = "lm", se=FALSE, col = 'black',  alpha = 0.7, size = 1)+
