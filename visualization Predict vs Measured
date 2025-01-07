@@ -1,0 +1,19 @@
+library (ggplot2)
+......
+
+ggplot(res) +
+  #geom_smooth((aes(x = c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4) , y =c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4))), method = "lm", se=FALSE, col = 'black',  alpha = 0.7, size = 1)+
+  geom_point(aes(x = res_ref , y = res_cal), size = 3, col = 'red', alpha = 0.7) +
+  geom_point(aes(x = res_ref , y = res_cv), size = 3, col = 'blue', alpha = 0.7) +
+  geom_smooth((aes(x = res_ref , y = res_cal)), method = "lm", se=FALSE, col = 'red',  alpha = 0.7, size = 1) +
+  geom_smooth((aes(x = res_ref , y = res_cv)), method = "lm", se=FALSE, col = 'blue',  alpha = 0.7, size = 1)+
+  theme_bw() +
+  scale_y_continuous(name='Reference value, ppb')+
+  scale_x_continuous(name='Predicted value, ppb')+
+  theme(text = element_text(size = 15,face="bold", colour ='black'),
+        axis.text.x  = element_text(size=13.5,colour = 'black'),
+        axis.text.y = element_text(size=13.5,colour = 'black'),
+        panel.border = element_rect(colour = "black", size=1),
+        panel.grid.major = element_line(colour = "grey", linetype= 'dashed'),
+        panel.grid.minor = element_line(colour = "grey", linetype= 'dashed'))
+abline()
