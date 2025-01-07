@@ -1,0 +1,93 @@
+library(readxl)
+library(mdatools)
+library(Metrics)
+
+# getting predictions for all points and all datasets (with variable selection)
+
+y_ref <- data.frame(read_excel("~/R/Chemometrics/China MW December 22.xlsx", sheet = 'DF with new MS',
+                               range ='B1:B22'))
+rownames(y_ref) <- seq(0,20, 1)
+
+MS <-  data.frame(read_excel("~/R/Chemometrics/China MW December 22.xlsx", sheet = 'DF with new MS',
+                             range ='AA1:AO22'))
+rownames(MS) <- seq(0,20, 1)
+FL <- data.frame(read_excel("~/R/Chemometrics/China MW December 22.xlsx", sheet = 'DF with new MS',
+                            range ='D1:Z22'))
+rownames(FL) <- seq(0,20, 1)
+
+MS <-  MS[!(row.names(MS) %in% c('0','2', '5', '11', '12' , '15')),]
+FL <-  FL[!(row.names(FL) %in% c('0','2', '5', '11', '12' , '15')),]
+y_ref <-  y_ref[!(row.names(y_ref) %in% c('0','2', '5', '11', '15' , '12')),]
+
+
+m_ms <- pls(MS[,-c(1, 8, 9, 11, 12)], y_ref, 10, cv = 1, scale = T, center = T)   
+plotRMSE(m_ms)
+show(summary(m_ms))
+plotRegcoeffs(m_ms, show.labels = T)
+
+m_fl <- pls(FL, y_ref, 10, cv = 1, scale = T, center = T)
+plotRMSE(m_fl)
+show(summary(m_fl))
+plotYCumVariance(m_fl)
+plotRegcoeffs(m_fl, show.labels = T)
+
+
+y_mscal <-  data.frame(m_ms$res$cal$y.pred[,1,])
+y_flcal <-  data.frame(m_fl$res$cal$y.pred[,1,])
+
+
+cd <- data.frame(cbind(y_ref, y_mscal, y_flcal))
+colnames(cd) <- c('y_ref', 'y_ms','y_fl')
+y_ref1 <- y_ref
+m <- lm(data = cd, y_ref ~ y_ms+ y_fl)
+summary(m)
+y_ref <-sapply(y_ref, as.numeric)
+#plot(y_ref, yp)
+
+
+################################################################################
+##### HLDF calibration and validation
+
+y_msp <-  data.frame(m_ms$res$cv$y.pred[,1,])
+y_flp <- data.frame( m_fl$res$cv$y.pred[,1,])
+daf_p <- data.frame(cbind(y_ref, y_msp, y_flp))
+colnames(daf_p) <- c('y_ref', 'y_ms','y_fl')
+
+y_p <- predict(m, daf_p)
+ycal <- predict(m)
+
+rmse <- rmse(y_ref, y_p)
+plot(y_ref, y_p)
+abline(a = 0, b =1, col = 'green')
+text(y_ref, y_p,
+     labels = (names(y_p)),
+     cex = 0.6, pos = 4, col = "gray")
+summary(m)
+
+res_pred <- y_p
+res_cal <- ycal
+res_ref <- y_ref
+res <-data.frame(cbind(res_pred, res_cal, res_ref))
+
+library(ggplot2)
+
+ggplot(res) +
+  #geom_smooth((aes(x = c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4) , y =c(3,3,4,5,5.5,5.6,5.7,9.8,9,5,6,7,4,4,4))), method = "lm", se=FALSE, col = 'black',  alpha = 0.7, size = 1)+
+  geom_point(aes(x = res_ref , y = res_cal), size = 3, col = 'red', alpha = 0.7) +
+  geom_point(aes(x = res_ref , y = res_pred), size = 3, col = 'blue', alpha = 0.7) +
+  geom_smooth((aes(x = res_ref , y = res_cal)), method = "lm", se=FALSE, col = 'red',  alpha = 0.7, size = 1) +
+  geom_smooth((aes(x = res_ref , y = res_pred)), method = "lm", se=FALSE, col = 'blue',  alpha = 0.7, size = 1)+
+  theme_bw() +
+  scale_color_manual(name='Regression Model',
+                     breaks=c('Linear', 'Quadratic', 'Cubic'),
+                     values=c('Cubic'='pink', 'Quadratic'='blue', 'Linear'='purple'))+
+  scale_y_continuous(name='Reference value, ppb')+
+  scale_x_continuous(name='Predicted value, ppb')+
+  theme(text = element_text(size = 15,face="bold", colour ='black'),
+        axis.text.x  = element_text(size=13.5,colour = 'black'),
+        axis.text.y = element_text(size=13.5,colour = 'black'),
+        panel.border = element_rect(colour = "black", size=1),
+        panel.grid.major = element_line(colour = "grey", linetype= 'dashed'),
+        panel.grid.minor = element_line(colour = "grey", linetype= 'dashed'))
+abline()
+
